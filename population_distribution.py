@@ -50,24 +50,25 @@ plt.show()
 FFMpegWriter = manimation.writers['ffmpeg']
 metadata = dict(title='Movie', artist='YM',
                 comment='histogram of population distribution')
-writer = FFMpegWriter(fps=15, metadata=metadata)
+writer = FFMpegWriter(fps=10, metadata=metadata)
 
 # Initialize the movie
 fig, ax = plt.subplots()
 
 # Update the frames for the movie
-with writer.saving(fig, "movie.mp4", 100):
+with writer.saving(fig, "movie.mp4", 200):
     for year in column_name[2:]:
         ax.clear() # clean the previous figure
         ax.set_ylim(0,0.7) # set the figure properties
         ax.set_xlim(0,10)
         ax.set_xlabel('log10')
         ax.set_ylabel('percentage')
+        ax.text(1, 0.5, 'year = ' + year)
         #plot
         pop_year = [math.log10(i) for i in list(df_country[year])]
-        pop_year_max = pop_year.max()
-        pop_year_min = pop_year.min()
-        pop_range = [pop_year_max, pop_year_min]
+        pop_year_max = max(pop_year)
+        pop_year_min = min(pop_year)
+        pop_range = np.linspace(pop_year_min, pop_year_max, 100)
         a_estimate, loc_estimate, scale_estimate = stats.skewnorm.fit(pop_year)
         pdf_skewnorm = stats.skewnorm.pdf(pop_range, a_estimate,
                                           loc = loc_estimate,
