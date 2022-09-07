@@ -1,7 +1,9 @@
 import pandas as pd
 import matplotlib.pyplot as plt
+from scipy import stats
 import math
 import numpy as np
+import matplotlib.animation as manimation
 
 df_raw = pd.read_csv('raw_data.csv') 
 column_name = list(df_raw.columns)
@@ -42,13 +44,34 @@ fig, axs = plt.subplots(1,2)
 axs[0].hist(x, bins, density = True) # if two rows then axs[0,0]
 axs[1].hist(y, bins, density = True)
 plt.show() 
-'''
-fig, ax = plt.subplots() # subplots is covenient if having multiple figures 
-# the histogram of the data
-n, bins, patches = ax.hist(x, num_bins, density=True)
-ax.plot(bins)
-ax.set_xlabel('')
-ax.set_ylabel('')
-ax.set_title('')
-plt.show()
-'''
+
+
+# Define the meta data for the movie
+FFMpegWriter = manimation.writers['ffmpeg']
+metadata = dict(title='Movie', artist='YM',
+                comment='histogram of population distribution')
+writer = FFMpegWriter(fps=15, metadata=metadata)
+
+# Initialize the movie
+fig, ax = plt.subplots()
+
+# Update the frames for the movie
+with writer.saving(fig, "movie.mp4", 100):
+    for year in column_name[2:]:
+        ax.clear() # clean the previous figure
+        ax.set_ylim(0,0.7) # set the figure properties
+        ax.set_xlim(0,10)
+        ax.set_xlabel('log10')
+        ax.set_ylabel('percentage')
+        #plot
+        pop_year = [math.log10(i) for i in list(df_country[year])]
+        pop_year_max = pop_year.max()
+        pop_year_min = pop_year.min()
+        pop_range = [pop_year_max, pop_year_min]
+        a_estimate, loc_estimate, scale_estimate = stats.skewnorm.fit(pop_year)
+        pdf_skewnorm = stats.skewnorm.pdf(pop_range, a_estimate,
+                                          loc = loc_estimate,
+                                          scale = scale_estimate)
+        plt.plot(pop_range, pdf_skewnorm)
+        plt.hist(pop_year, num_bins, density = True)
+        writer.grab_frame()
